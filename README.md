@@ -10,4 +10,4 @@
 
 **主界面效果图如下：**
 
-![](https://github.com/Neil-Steven/WebImage-demo/blob/master/WebImage-Swift/WebImage-Swift/Screenshots/main.png)
+![](https://github.com/Neil-Steven/WebImage/blob/master/WebImage-Swift/WebImage-Swift/Screenshots/main.png)
