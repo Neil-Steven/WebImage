@@ -9,10 +9,10 @@
 import UIKit
 
 class ViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UIScrollViewDelegate {
-
+    
     // 将Caches目录路径保存为本地变量以方便使用
     let kPathCache = NSSearchPathForDirectoriesInDomains(.cachesDirectory, .userDomainMask, true).first!
-
+    
     
     
     // CollectionView
@@ -28,14 +28,18 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
     lazy var operationCache : Dictionary = Dictionary<String, Operation>()
     // 下拉刷新控件
     lazy var refreshControl = UIRefreshControl()
-
+    
+    // 下载未完成时的占位图
+    var placeholder : UIImage!
     // 页面滚动标记
     var isScrolling = false
+    // 记录上一次的Y轴偏移量（用以计算滚动速度）
+    var lastContentOffsetY : CGFloat = 0
     
     
-
-    // MARK: - 
-  
+    
+    // MARK: -
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -48,27 +52,22 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
         picCollectionView.frame = UIScreen.main.bounds
         
         
-        // 初始化picArray数据源
         if let picPlistFile = Bundle.main.path(forResource: "pic-large", ofType: "plist") {
             picArray = NSMutableArray(contentsOfFile: picPlistFile) as! Array<String>
         }
-
-        // 设置下载并发数
+        
         self.queue.maxConcurrentOperationCount = 10;
         
+        placeholder = createImage(with: UIColor.lightGray)
         
-        // 设置刷新控件的颜色
+        // 设置refreshControl
         refreshControl.tintColor = UIColor.blue
-        // 设置刷新控件下边的提示文字及文字的颜色
         refreshControl.attributedTitle = NSAttributedString(string: "下拉刷新")
-        // 给refreshControl添加一个刷新方法
         refreshControl.addTarget(self, action: #selector(ViewController.refreshAction), for: .valueChanged)
-        // 把refreshControl添加到picCollectionView
         picCollectionView.addSubview(refreshControl)
-        // 即使picCollectionView的内容没有占满整个CollectionView也可以实现下拉
         picCollectionView.alwaysBounceVertical = true
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         
@@ -80,65 +79,46 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
         // 取消所有的下载操作
         queue.cancelAllOperations()
     }
-    
-    
+
     func refreshAction() {
         picCollectionView.reloadData()
         refreshControl.endRefreshing()
     }
-    
 
+    // 通过颜色来生成一个纯色图片
+    func createImage(with color: UIColor) -> UIImage {
+        let rect = CGRect(x: 0, y: 0, width: 1, height: 1)
+        UIGraphicsBeginImageContext(rect.size)
+        let context = UIGraphicsGetCurrentContext()!
+        context.setFillColor(color.cgColor)
+        context.fill(rect)
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return image!
+    }
+    
     
     // MARK: - UIScrollViewDelegate
     
-    // 当开始滚动视图时，执行该方法。一次有效滑动（开始滑动，滑动一小段距离，只要手指不松开，只算一次滑动），只执行一次
-    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        NSLog("---------------视图开始滚动---------------")
-        
-        isScrolling = true
-        // 清理下载操作缓冲池
-        operationCache.removeAll()
-        // 取消所有的下载操作
-        queue.cancelAllOperations()
-    }
-    
-    // 滑动视图，当手指离开屏幕那一霎那，调用该方法。一次有效滑动，只执行一次
-    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        NSLog("---------------手指离开屏幕---------------")
-        
-        // 如果当手指离开那一瞬后，视图已经停止滚动
-        if !decelerate {
-            NSLog("---------------视图停止滚动---------------");
-            
-            isScrolling = false
-            picCollectionView.reloadData()
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if scrollView.contentOffset.y - lastContentOffsetY > CGFloat(10) {
+            if isScrolling == false {
+                operationCache.removeAll()
+                queue.cancelAllOperations()
+                isScrolling = true
+            }
+        } else {
+            if isScrolling == true {
+                picCollectionView.reloadData()
+                isScrolling = false
+            }
         }
-    }
-
-    // 滚动视图减速完成，滚动将停止时，调用该方法。一次有效滑动，只执行一次
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        NSLog("---------------视图停止滚动---------------")
         
-        isScrolling = false
-        picCollectionView.reloadData()
-    }
-
-    // 指示当用户点击状态栏后，滚动视图是否能够滚动到顶部
-    func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
-        return true
+        lastContentOffsetY = scrollView.contentOffset.y
     }
     
-    // 当滚动视图滚动到最顶端后，执行该方法
-    func scrollViewDidScrollToTop(_ scrollView: UIScrollView) {
-        NSLog("---------------视图滚动至顶部---------------")
-        
-        isScrolling = false
-        // 防止有过多图片尚未加载但立即返回顶部导致下载操作过多
-        operationCache.removeAll()
-        queue.cancelAllOperations()
-    }
     
-
+    
     // MARK: - UICollectionViewDataSource
     
     // 每个section的item个数
@@ -156,12 +136,13 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
         let imageSrc = picArray[indexPath.row]
         // 网址通过斜杠分割后的最后一个元素即为图片名
         let fileName = imageSrc.components(separatedBy: "/").last!
-
+        
         
         // 首先判断内存缓存内部是否有图片对象
         if let image = imageCache[fileName] {
             cell.imageView.image = image
             cell.filenameLabel.text = fileName
+            
             return cell
         }
         
@@ -179,11 +160,18 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
             
             return cell;
         }
-
+        
         // 若不存在，则先设置占位图
         NSLog("第%ld张图片%@不存在，先设置占位图", indexPath.row, fileName);
-        cell.imageView.image = #imageLiteral(resourceName: "placeholder.png")
+        cell.imageView.image = placeholder
         cell.filenameLabel.text = fileName
+        
+        // 为cell的imageView添加一个activityIndicator
+        let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
+        activityIndicator.frame = CGRect(x: cell.imageView.frame.size.width/2 - 30, y: cell.imageView.frame.size.height/2 - 30, width: 60, height: 60)
+        cell.imageView.addSubview(activityIndicator)
+        activityIndicator.startAnimating()
+        
         
         // 只有在不下载且页面不在滚动时才刷新cell
         if (self.operationCache[fileName] == nil) && !isScrolling {
@@ -195,7 +183,7 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
 //                if (indexPath.row > 9) {
 //                    Thread.sleep(forTimeInterval: 5.0)
 //                }
-
+                
                 // 下载图片
                 let imageSrc = self.picArray[indexPath.row]
                 let url = URL(string: imageSrc)
@@ -210,6 +198,16 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
                         // 保存至Caches目录下
                         let imagePath = URL(fileURLWithPath: filePath)
                         try? data!.write(to: imagePath)
+                        
+                        // 移除activityIndicator
+                        for subview in cell.imageView.subviews {
+                            // 找到要删除的子视图的对象
+                            if subview.isKind(of: UIActivityIndicatorView.self) {
+                                let indicatorView = subview as! UIActivityIndicatorView
+                                indicatorView.removeFromSuperview()
+                                break
+                            }
+                        }
                     }
                 }
                     
@@ -242,4 +240,3 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
         return 1
     }
 }
-

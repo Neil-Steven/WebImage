@@ -15,7 +15,6 @@
 		2859751B1F433DC6000C319C /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 285975171F433DC6000C319C /* icon.png */; };
 		2859751C1F433DC6000C319C /* pic-large.plist in Resources */ = {isa = PBXBuildFile; fileRef = 285975181F433DC6000C319C /* pic-large.plist */; };
 		2859751D1F433DC6000C319C /* pic-small.plist in Resources */ = {isa = PBXBuildFile; fileRef = 285975191F433DC6000C319C /* pic-small.plist */; };
-		2859751E1F433DC6000C319C /* placeholder.png in Resources */ = {isa = PBXBuildFile; fileRef = 2859751A1F433DC6000C319C /* placeholder.png */; };
 		285975201F4340D0000C319C /* Common.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2859751F1F4340D0000C319C /* Common.swift */; };
 /* End PBXBuildFile section */
 
@@ -30,7 +29,6 @@
 		285975171F433DC6000C319C /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
 		285975181F433DC6000C319C /* pic-large.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "pic-large.plist"; sourceTree = "<group>"; };
 		285975191F433DC6000C319C /* pic-small.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "pic-small.plist"; sourceTree = "<group>"; };
-		2859751A1F433DC6000C319C /* placeholder.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = placeholder.png; sourceTree = "<group>"; };
 		2859751F1F4340D0000C319C /* Common.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Common.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -73,7 +71,6 @@
 				285975181F433DC6000C319C /* pic-large.plist */,
 				285975191F433DC6000C319C /* pic-small.plist */,
 				285975171F433DC6000C319C /* icon.png */,
-				2859751A1F433DC6000C319C /* placeholder.png */,
 				2859750F1F433CEB000C319C /* Info.plist */,
 			);
 			path = "WebImage-Swift";
@@ -142,7 +139,6 @@
 				2859751B1F433DC6000C319C /* icon.png in Resources */,
 				2859750E1F433CEB000C319C /* LaunchScreen.storyboard in Resources */,
 				2859751D1F433DC6000C319C /* pic-small.plist in Resources */,
-				2859751E1F433DC6000C319C /* placeholder.png in Resources */,
 				285975091F433CEB000C319C /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -12,8 +12,12 @@
 
 @interface ViewController ()
 
+// 下载未完成时的占位图
+@property UIImage *placeholder;
 // 页面滚动标记
 @property Boolean isScrolling;
+// 记录上一次的Y轴偏移量（用以计算滚动速度）
+@property CGFloat lastContentOffsetY;
 
 @end
 
@@ -29,7 +33,7 @@ LAZY_LOAD(NSMutableDictionary, operationCache)
     
     self.view.backgroundColor = [UIColor whiteColor];
     self.navigationItem.title = @"WebImage demo";
-
+    
     // 1.初始化layout
     UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
     
@@ -40,43 +44,37 @@ LAZY_LOAD(NSMutableDictionary, operationCache)
     
     // 3.注册collectionViewCell
     [self.picCollectionView registerClass:[PicCollectionViewCell class] forCellWithReuseIdentifier:@"picCellId"];
-
+    
     // 4.设置代理
     self.picCollectionView.delegate = self;
     self.picCollectionView.dataSource = self;
     self.picCollectionView.frame = [UIScreen mainScreen].bounds;
     
-
+    
     // 控制台打印App根目录
     NSLog(@"Home directory: %@", NSHomeDirectory());
-
-    // 初始化isScrolling为NO
+    
+    
+    _placeholder = [self createImageWithColor:[UIColor lightGrayColor]];
     _isScrolling = NO;
+    _lastContentOffsetY = 0;
     
-    // 初始化picArray数据源
     self.picArray = [NSMutableArray arrayWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"pic-large" ofType:@"plist"]];
-    
-    // 设置下载并发数
     self.queue.maxConcurrentOperationCount = 10;
     
-
+    
     // 初始化refreshControl
     self.refreshControl = [[UIRefreshControl alloc] init];
-    // 设置刷新控件的颜色
     self.refreshControl.tintColor = [UIColor blueColor];
-    // 设置刷新控件下边的提示文字及文字的颜色
     self.refreshControl.attributedTitle = [[NSAttributedString alloc] initWithString:@"下拉刷新"];
-    // 给refreshControl添加一个刷新方法
     [self.refreshControl addTarget:self action:@selector(refreshAction) forControlEvents:UIControlEventValueChanged];
-    // 把refreshControl添加到picCollectionView
     [self.picCollectionView addSubview:self.refreshControl];
-    // 即使picCollectionView的内容没有占满整个CollectionView也可以实现下拉
     self.picCollectionView.alwaysBounceVertical = YES;
 }
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
-
+    
     NSLog(@"---------------Memory Warning---------------");
     // 清理图片缓冲池
     [self.imageCache removeAllObjects];
@@ -94,55 +92,37 @@ LAZY_LOAD(NSMutableDictionary, operationCache)
     [self.refreshControl endRefreshing];
 }
 
+// 通过颜色来生成一个纯色图片
+- (UIImage *)createImageWithColor:(UIColor *)color{
+    CGRect rect = CGRectMake(0.0f, 0.0f, 1.0f, 1.0f);
+    UIGraphicsBeginImageContext(rect.size);
+    CGContextRef context = UIGraphicsGetCurrentContext();
+    CGContextSetFillColorWithColor(context, [color CGColor]);
+    CGContextFillRect(context, rect);
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return image;
+}
+
 
 
 #pragma mark - UIScrollViewDelegate
 
-// 当开始滚动视图时，执行该方法。一次有效滑动（开始滑动，滑动一小段距离，只要手指不松开，只算一次滑动），只执行一次
-- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
-    NSLog(@"---------------视图开始滚动---------------");
-    
-    _isScrolling = YES;
-    // 清理下载操作缓冲池
-    [self.operationCache removeAllObjects];
-    // 取消所有的下载操作
-    [self.queue cancelAllOperations];
-}
-
-// 滑动视图，当手指离开屏幕那一霎那，调用该方法。一次有效滑动，只执行一次
-- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate{
-    NSLog(@"---------------手指离开屏幕---------------");
-    
-    // 如果当手指离开那一瞬后，视图已经停止滚动
-    if (!decelerate) {
-        NSLog(@"---------------视图停止滚动---------------");
-        
-        _isScrolling = NO;
-        [self.picCollectionView reloadData];
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    if (scrollView.contentOffset.y - _lastContentOffsetY > 10) {
+        if (_isScrolling == NO) {
+            [self.operationCache removeAllObjects];
+            [self.queue cancelAllOperations];
+            _isScrolling = YES;
+        }
+    } else {
+        if (_isScrolling == YES) {
+            [self.picCollectionView reloadData];
+            _isScrolling = NO;
+        }
     }
-}
-
-// 滚动视图减速完成，滚动将停止时，调用该方法。一次有效滑动，只执行一次
-- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-    NSLog(@"---------------视图停止滚动---------------");
     
-    _isScrolling = NO;
-    [self.picCollectionView reloadData];
-}
-
-// 指示当用户点击状态栏后，滚动视图是否能够滚动到顶部
-- (BOOL)scrollViewShouldScrollToTop:(UIScrollView *)scrollView{
-    return YES;
-}
-
-// 当滚动视图滚动到最顶端后，执行该方法
-- (void)scrollViewDidScrollToTop:(UIScrollView *)scrollView{
-    NSLog(@"---------------视图滚动至顶部---------------");
-    
-    _isScrolling = NO;
-    // 防止有过多图片尚未加载但立即返回顶部导致下载操作过多
-    [self.operationCache removeAllObjects];
-    [self.queue cancelAllOperations];
+    _lastContentOffsetY = scrollView.contentOffset.y;
 }
 
 
@@ -193,13 +173,19 @@ LAZY_LOAD(NSMutableDictionary, operationCache)
     
     // 若不存在，则先设置占位图
     NSLog(@"第%ld张图片%@不存在，先设置占位图", (long)indexPath.row, fileName);
-    cell.imageView.image = [UIImage imageNamed:@"placeholder"];
+    cell.imageView.image = _placeholder;
     cell.filenameLabel.text = fileName;
-
-    // 只有在不下载且页面不在滚动时才刷新cell
+    
+    // 为cell的imageView添加一个activityIndicator
+    UIActivityIndicatorView *activityIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+    activityIndicator.frame = CGRectMake(cell.imageView.frame.size.width/2 - 30, cell.imageView.frame.size.height/2 - 30, 60, 60);
+    [cell.imageView addSubview:activityIndicator];
+    [activityIndicator startAnimating];
+    
+    // 只有在不下载且页面不在快速滚动时才刷新cell
     if (![self.operationCache objectForKey:fileName] && !_isScrolling) {
-        NSLog(@"第%ld张图片%@不在下载，且页面不在滚动，开始下载", (long)indexPath.row, fileName);
-
+        NSLog(@"第%ld张图片%@不在下载，且页面不在快速滚动，开始下载", (long)indexPath.row, fileName);
+        
         // 可以及时地解除循环引用
         WeakSelf(self);
         // 创建异步下载操作
@@ -223,16 +209,26 @@ LAZY_LOAD(NSMutableDictionary, operationCache)
                 // 保存至Caches目录下
                 NSString *imagePath = [kPathCache stringByAppendingPathComponent:fileName];
                 [data writeToFile:imagePath atomically:YES];
-                // 清理对应的下载操作，也可以解除循环引用
-                [weakself.operationCache removeObjectForKey:fileName];
+                
+                // 移除activityIndicator
+                for (id subview in [cell.imageView subviews]) {
+                    // 找到要删除的子视图的对象
+                    if ([subview isKindOfClass:[UIActivityIndicatorView class]]) {
+                        UIActivityIndicatorView *indicatorView = (UIActivityIndicatorView *)subview;
+                        [indicatorView removeFromSuperview];
+                        break;
+                    }
+                }
             }
+            
             // 如果下载失败
             else {
                 NSLog(@"第%ld张图片%@下载失败，尝试重新下载", (long)indexPath.row, fileName);
-                // 清理对应的下载操作
-                if ([weakself.operationCache objectForKey:fileName])
-                    [weakself.operationCache removeObjectForKey:fileName];
             }
+            
+            // 清理对应的下载操作
+            if ([weakself.operationCache objectForKey:fileName])
+                [weakself.operationCache removeObjectForKey:fileName];
             
             // 无论是否下载成功都要回到主线程刷新对应的cell
             [[NSOperationQueue mainQueue] addOperationWithBlock:^{
@@ -265,17 +261,17 @@ LAZY_LOAD(NSMutableDictionary, operationCache)
 
 // 设置每个item的UIEdgeInsets
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
-    return UIEdgeInsetsMake(15, 15, 15, 15);
+    return UIEdgeInsetsMake(10, 10, 10, 10);
 }
 
 // 设置每个item水平间距
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumInteritemSpacingForSectionAtIndex:(NSInteger)section {
-    return 15;
+    return 10;
 }
 
 // 设置每个item垂直间距
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {
-    return 15;
+    return 10;
 }
 
 

@@ -14,7 +14,6 @@
 		282372071F409CA800942DE5 /* pic-small.plist in Resources */ = {isa = PBXBuildFile; fileRef = 282372061F409CA800942DE5 /* pic-small.plist */; };
 		282372091F409D6900942DE5 /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 282372081F409D6900942DE5 /* icon.png */; };
 		2823720C1F409DBC00942DE5 /* PicCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 2823720B1F409DBC00942DE5 /* PicCollectionViewCell.m */; };
-		2823720E1F40A6CE00942DE5 /* placeholder.png in Resources */ = {isa = PBXBuildFile; fileRef = 2823720D1F40A6CE00942DE5 /* placeholder.png */; };
 		289CC74D1F41F6E900C61893 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 289CC74C1F41F6E900C61893 /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
@@ -32,7 +31,6 @@
 		282372081F409D6900942DE5 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
 		2823720A1F409DBC00942DE5 /* PicCollectionViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PicCollectionViewCell.h; sourceTree = "<group>"; };
 		2823720B1F409DBC00942DE5 /* PicCollectionViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PicCollectionViewCell.m; sourceTree = "<group>"; };
-		2823720D1F40A6CE00942DE5 /* placeholder.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = placeholder.png; sourceTree = "<group>"; };
 		289CC74C1F41F6E900C61893 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -76,7 +74,6 @@
 				282372041F409C9D00942DE5 /* pic-large.plist */,
 				282372061F409CA800942DE5 /* pic-small.plist */,
 				282372081F409D6900942DE5 /* icon.png */,
-				2823720D1F40A6CE00942DE5 /* placeholder.png */,
 				282371FD1F4097D200942DE5 /* Info.plist */,
 				282372031F40994000942DE5 /* PrefixHeader.pch */,
 				282371EC1F4097D200942DE5 /* Supporting Files */,
@@ -154,7 +151,6 @@
 				282372091F409D6900942DE5 /* icon.png in Resources */,
 				282372051F409C9D00942DE5 /* pic-large.plist in Resources */,
 				289CC74D1F41F6E900C61893 /* LaunchScreen.storyboard in Resources */,
-				2823720E1F40A6CE00942DE5 /* placeholder.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
