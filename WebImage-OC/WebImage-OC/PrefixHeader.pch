@@ -185,7 +185,7 @@ return _##name; \
 
 // 19. cell尺寸
 #define CELL_WIDTH (SCREEN_WIDTH / 2 - 20)
-#define CELL_HEIGHT (CELL_WIDTH / 16 * 9 + 20)
+#define CELL_HEIGHT (CELL_WIDTH / 16 * 10 + 20)
 
 
 #endif /* PrefixHeader_pch */

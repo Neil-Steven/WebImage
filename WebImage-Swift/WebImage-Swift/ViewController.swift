@@ -52,7 +52,7 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
         picCollectionView.frame = UIScreen.main.bounds
         
         
-        if let picPlistFile = Bundle.main.path(forResource: "pic-large", ofType: "plist") {
+        if let picPlistFile = Bundle.main.path(forResource: "pictures", ofType: "plist") {
             picArray = NSMutableArray(contentsOfFile: picPlistFile) as! Array<String>
         }
         
@@ -80,7 +80,7 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
         queue.cancelAllOperations()
     }
 
-    func refreshAction() {
+    @objc func refreshAction() {
         picCollectionView.reloadData()
         refreshControl.endRefreshing()
     }

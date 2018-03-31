@@ -59,7 +59,7 @@ LAZY_LOAD(NSMutableDictionary, operationCache)
     _isScrolling = NO;
     _lastContentOffsetY = 0;
     
-    self.picArray = [NSMutableArray arrayWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"pic-large" ofType:@"plist"]];
+    self.picArray = [NSMutableArray arrayWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"pictures" ofType:@"plist"]];
     self.queue.maxConcurrentOperationCount = 10;
     
     
